@@ -1,0 +1,13 @@
+{
+  "name": "cineledger",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"blue.bold,cyan.bold\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

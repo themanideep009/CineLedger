@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #f8fafc;
+    --text-main: #0f172a;
+    --brand-green: #059669;
+    --brand-green-hover: #047857;
+  }
+
+  html.dark {
+    --bg-main: #030712;
+    --text-main: #f8fafc;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    @apply font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white transition-colors duration-300;
+  }
+}
+
+/* Beautiful White & Medium Green Theme Styles */
+html.light body,
+body:not(.dark) {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Glassmorphism Panels for Light Mode (White + Medium Green Accent) */
+html.light .glass-panel,
+body:not(.dark) .glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* Glassmorphism Cards for Light Mode */
+html.light .glass-card,
+body:not(.dark) .glass-card {
+  background: #ffffff;
+  backdrop-filter: blur(12px);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+/* Card Hover Animation with Medium Green Glow */
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.light .glass-card-hover:hover,
+body:not(.dark) .glass-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: #059669;
+  box-shadow: 0 12px 30px rgba(5, 150, 105, 0.18);
+}
+
+/* Custom CSS Utilities */
+.gradient-text {
+  @apply bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400 bg-clip-text text-transparent font-extrabold;
+}
+
+.gradient-accent-bg {
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+}
+
+.glow-emerald-lg {
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.25);
+}
+
+@keyframes progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* Dark Mode Overrides */
+html.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+html.dark .glass-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.2);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.light ::-webkit-scrollbar-track,
+body:not(.dark) ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb,
+body:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #059669;
+}
