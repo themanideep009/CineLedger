@@ -18,7 +18,7 @@ export const PaymentModal = ({ isOpen, onClose, onPaymentSuccess, totalAmount, s
     setCardNumber('4242 4242 4242 4242');
     setExpiry('12/28');
     setCvv('789');
-    setCardHolder('Aarav Patel');
+    setCardHolder('Manideep Sai');
   };
 
   const handleProcessPayment = (e) => {
@@ -185,7 +185,7 @@ export const PaymentModal = ({ isOpen, onClose, onPaymentSuccess, totalAmount, s
                     <label className="block text-slate-700 font-bold mb-1">Cardholder Name</label>
                     <input
                       type="text"
-                      placeholder="Aarav Patel"
+                      placeholder="Manideep Sai"
                       value={cardHolder}
                       onChange={(e) => setCardHolder(e.target.value)}
                       required

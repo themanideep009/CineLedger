@@ -228,7 +228,7 @@ export const LoginPage = () => {
               <option value="" disabled>
                 -- Select Demo Role to Test --
               </option>
-              <option value="CUSTOMER">Customer (Online Ticket Booking)</option>
+              <option value="CUSTOMER">Customer - Manideep Sai (Online Ticket Booking)</option>
               <option value="THEATRE_ADMIN">Theatre Admin (PVR Gate & Counter)</option>
               <option value="PRODUCER">Producer (Dharma Box Office)</option>
               <option value="SUPER_ADMIN">Super Admin (Full Access)</option>

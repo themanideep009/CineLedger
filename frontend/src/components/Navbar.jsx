@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCity } from '../context/CityContext';
 import { CustomerProfileDrawer } from './CustomerProfileDrawer';
+import { OffersModal } from './OffersModal';
 import {
   ShieldAlert,
   TrendingUp,
   QrCode,
-  LogOut,
-  Building2,
   User,
   ChevronDown,
   MapPin,
-  Film,
   Mic,
   Trophy,
   Ticket,
@@ -25,9 +23,14 @@ export const Navbar = () => {
   const { selectedCity, openCityModal } = useCity();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [offersOpen, setOffersOpen] = useState(false);
 
   const userName = user?.name || (user?.email ? user.email.split('@')[0] : 'Account');
+
+  // Determine active sub-navbar category
+  const activeCategory = searchParams.get('category') || (location.pathname === '/' ? 'PLAYS' : '');
 
   return (
     <>
@@ -52,16 +55,16 @@ export const Navbar = () => {
               </div>
             </Link>
 
-            {/* Right Controls: Location Button (Placed beside Login/Signup) + User Profile */}
-            <div className="flex items-center space-x-3">
-              {/* City Location Button (Beside Login / Signup) */}
+            {/* Right Controls: Location Button + User Profile */}
+            <div className="flex items-center space-x-2.5">
+              {/* City Location Button */}
               <button
                 onClick={openCityModal}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 text-xs font-extrabold transition-all cursor-pointer shadow-xs group"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 text-xs font-extrabold transition-all cursor-pointer shadow-xs group"
                 title="Select your city"
               >
-                <MapPin className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span className="max-w-[130px] truncate">{selectedCity || 'Select City'}</span>
+                <MapPin className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span className="max-w-[110px] truncate">{selectedCity || 'Select City'}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
               </button>
 
@@ -78,9 +81,9 @@ export const Navbar = () => {
               {user ? (
                 <div
                   onClick={() => setDrawerOpen(true)}
-                  className="flex items-center space-x-2.5 p-1.5 pr-3 rounded-full border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer transition-all shadow-xs group"
+                  className="flex items-center space-x-2.5 p-1 pr-2.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer transition-all shadow-xs group"
                 >
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden">
+                  <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden">
                     {user.picture ? (
                       <img src={user.picture} alt={userName} className="w-full h-full object-cover" />
                     ) : (
@@ -121,36 +124,39 @@ export const Navbar = () => {
         <div className="bg-slate-900 text-white border-t border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-11 text-xs font-bold overflow-x-auto scrollbar-none">
-              {/* Left Main Categories */}
+              {/* Left Main Categories (Plays & Theatre placed first, replacing Movies) */}
               <div className="flex items-center space-x-6 shrink-0">
                 <Link
-                  to="/"
+                  to="/?category=PLAYS"
                   className={`flex items-center gap-1.5 hover:text-emerald-400 transition-colors ${
-                    location.pathname === '/' ? 'text-emerald-400 font-extrabold border-b-2 border-emerald-400 py-2.5' : 'text-slate-300'
+                    activeCategory === 'PLAYS'
+                      ? 'text-emerald-400 font-extrabold border-b-2 border-emerald-400 py-2.5'
+                      : 'text-slate-300'
                   }`}
                 >
-                  <Film className="w-4 h-4 text-emerald-400" /> Movies
+                  <Sparkles className="w-4 h-4 text-emerald-400" /> Plays & Theatre
                 </Link>
 
                 <Link
-                  to="/"
-                  className="flex items-center gap-1.5 text-slate-300 hover:text-emerald-400 transition-colors"
+                  to="/?category=EVENTS"
+                  className={`flex items-center gap-1.5 hover:text-emerald-400 transition-colors ${
+                    activeCategory === 'EVENTS'
+                      ? 'text-amber-400 font-extrabold border-b-2 border-amber-400 py-2.5'
+                      : 'text-slate-300'
+                  }`}
                 >
                   <Mic className="w-4 h-4 text-amber-400" /> Events & Comedy
                 </Link>
 
                 <Link
-                  to="/"
-                  className="flex items-center gap-1.5 text-slate-300 hover:text-emerald-400 transition-colors"
+                  to="/?category=SPORTS"
+                  className={`flex items-center gap-1.5 hover:text-emerald-400 transition-colors ${
+                    activeCategory === 'SPORTS'
+                      ? 'text-cyan-400 font-extrabold border-b-2 border-cyan-400 py-2.5'
+                      : 'text-slate-300'
+                  }`}
                 >
                   <Trophy className="w-4 h-4 text-cyan-400" /> Sports & IPL Cricket
-                </Link>
-
-                <Link
-                  to="/"
-                  className="flex items-center gap-1.5 text-slate-300 hover:text-emerald-400 transition-colors"
-                >
-                  <Sparkles className="w-4 h-4 text-rose-400" /> Plays & Theatre
                 </Link>
 
                 {user?.role === 'PRODUCER' && (
@@ -174,10 +180,13 @@ export const Navbar = () => {
 
               {/* Right Secondary Quick Links */}
               <div className="hidden md:flex items-center space-x-5 text-slate-300 text-[11px]">
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white">
+                <button
+                  onClick={() => setOffersOpen(true)}
+                  className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"
+                >
                   <Tag className="w-3.5 h-3.5 text-emerald-400" /> Offers & Discounts
-                </span>
-                <Link to="/my-bookings" className="flex items-center gap-1 hover:text-white">
+                </button>
+                <Link to="/my-bookings" className="flex items-center gap-1 hover:text-white transition-colors">
                   <Ticket className="w-3.5 h-3.5 text-amber-400" /> My Bookings
                 </Link>
               </div>
@@ -188,6 +197,9 @@ export const Navbar = () => {
 
       {/* BookMyShow Style Customer Profile Drawer */}
       <CustomerProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      {/* Interactive Offers & Discounts Modal */}
+      <OffersModal isOpen={offersOpen} onClose={() => setOffersOpen(false)} />
     </>
   );
 };

@@ -86,7 +86,7 @@ const seedDatabase = async () => {
     });
 
     const customer = await User.create({
-      name: 'Aarav Patel',
+      name: 'Manideep Sai',
       email: 'customer@gmail.com',
       passwordHash: customerPassword,
       role: 'CUSTOMER',
@@ -418,9 +418,57 @@ const seedDatabase = async () => {
       producerId: producer2._id,
     });
 
+    const play1 = await Movie.create({
+      title: 'Mughal-E-Azam: The Musical Stage Play',
+      description: 'Grand theatrical adaptation of the legendary epic love story with live singing, lavish sets, and mesmerising Kathak performances on stage.',
+      language: 'Hindi / Urdu',
+      durationMin: 150,
+      genre: 'Drama / Plays & Theatre',
+      posterUrl: '/posters/kalki.jpg',
+      bannerUrl: '/banners/kalki.jpg',
+      releaseDate: new Date('2026-06-01'),
+      producerId: producer1._id,
+    });
+
+    const play2 = await Movie.create({
+      title: 'The Lion King: Grand Stage Theatre',
+      description: 'Visually stunning theatrical stage production featuring award-winning puppetry, magnificent costumes, and live orchestral music on stage.',
+      language: 'English',
+      durationMin: 140,
+      genre: 'Musical / Plays & Theatre',
+      posterUrl: '/posters/stree2.jpg',
+      bannerUrl: '/banners/stree2.jpg',
+      releaseDate: new Date('2026-07-10'),
+      producerId: producer2._id,
+    });
+
     // 5. Create Shows across today & upcoming dates in all cities & screens
     console.log('[Seed Engine] Creating Shows & Seat Map Allocations across multi-location screens...');
     const now = new Date();
+
+    // Show for Play 1 (Mumbai PVR)
+    const playShowDate1 = new Date(now);
+    playShowDate1.setHours(19, 0, 0, 0);
+    await Show.create({
+      movieId: play1._id,
+      screenId: screen1_1._id,
+      theatreId: theatre1._id,
+      showTime: playShowDate1,
+      price: 500,
+      bookedSeats: ['A1', 'A2', 'B1'],
+    });
+
+    // Show for Play 2 (Delhi INOX)
+    const playShowDate2 = new Date(now);
+    playShowDate2.setHours(20, 0, 0, 0);
+    await Show.create({
+      movieId: play2._id,
+      screenId: screen2_1._id,
+      theatreId: theatre2._id,
+      showTime: playShowDate2,
+      price: 600,
+      bookedSeats: ['C1', 'C2'],
+    });
     
     // Show 1: Mumbai PVR Audi 1 (Kalki)
     const show1Date = new Date(now);
@@ -703,7 +751,7 @@ const seedDatabase = async () => {
     console.log('2. PRODUCER (Dharma): producer.karan@cineledger.com / producer123');
     console.log('3. PRODUCER (YRF):   producer.aditya@cineledger.com / producer123');
     console.log('4. THEATRE_ADMIN:   admin.pvr@cineledger.com / theatre123');
-    console.log('5. CUSTOMER:        customer@gmail.com / customer123');
+    console.log('5. CUSTOMER (Manideep Sai): customer@gmail.com / customer123');
     console.log('======================================================\n');
 
     process.exit(0);

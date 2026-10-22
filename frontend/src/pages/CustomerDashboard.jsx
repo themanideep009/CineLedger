@@ -1,17 +1,39 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Film, Search, MapPin, Clock, ChevronDown, Building2, Ticket, Sparkles, Navigation, Mic, Trophy, Star, ShieldCheck, Play } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Search, MapPin, Clock, ChevronDown, Building2, Ticket, Sparkles, Mic, Trophy, Star, ShieldCheck, Play } from 'lucide-react';
 import { useCity } from '../context/CityContext';
+import { useAuth } from '../context/AuthContext';
 import { FeaturedPromoCarousel } from '../components/FeaturedPromoCarousel';
 
 export const CustomerDashboard = () => {
-  const { selectedCity, openCityModal } = useCity();
+  const { user } = useAuth();
+  const { selectedCity, openCityModal, selectCity } = useCity();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [movies, setMovies] = useState([]);
+
+  const isPrivilegedUser = user && ['THEATRE_ADMIN', 'PRODUCER', 'SUPER_ADMIN'].includes(user.role);
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeGenre, setActiveGenre] = useState('ALL');
-  const [viewMode, setViewMode] = useState('MOVIES'); // 'MOVIES', 'EVENTS', 'SPORTS', 'THEATRES'
+  
+  // View mode defaults to PLAYS ('PLAYS', 'EVENTS', 'SPORTS', 'THEATRES')
+  const [viewMode, setViewMode] = useState(() => {
+    const cat = searchParams.get('category');
+    if (cat === 'EVENTS') return 'EVENTS';
+    if (cat === 'SPORTS') return 'SPORTS';
+    if (cat === 'THEATRES') return 'THEATRES';
+    return 'PLAYS';
+  });
+
+  // Keep viewMode synced with searchParams category query
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat === 'EVENTS') setViewMode('EVENTS');
+    else if (cat === 'SPORTS') setViewMode('SPORTS');
+    else if (cat === 'THEATRES') setViewMode('THEATRES');
+    else if (cat === 'PLAYS') setViewMode('PLAYS');
+  }, [searchParams]);
 
   const fetchMoviesAndShows = useCallback(async () => {
     try {
@@ -35,7 +57,7 @@ export const CustomerDashboard = () => {
     fetchMoviesAndShows();
   }, [fetchMoviesAndShows]);
 
-  // Filter movies based on search query, genre, and viewMode
+  // Filter listings based on search query, genre, and viewMode
   const filteredMovies = movies.filter((m) => {
     const matchesSearch =
       m.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -43,10 +65,21 @@ export const CustomerDashboard = () => {
       m.genre.toLowerCase().includes(search.toLowerCase());
 
     let matchesViewMode = true;
-    if (viewMode === 'MOVIES') {
-      matchesViewMode = !m.genre.toLowerCase().includes('sports') && !m.genre.toLowerCase().includes('standup');
+    if (viewMode === 'PLAYS') {
+      // Show plays, theatre, drama, musical, or general shows excluding standup & sports
+      matchesViewMode =
+        m.genre.toLowerCase().includes('play') ||
+        m.genre.toLowerCase().includes('theatre') ||
+        m.genre.toLowerCase().includes('drama') ||
+        m.genre.toLowerCase().includes('musical') ||
+        (!m.genre.toLowerCase().includes('sports') && !m.genre.toLowerCase().includes('standup'));
     } else if (viewMode === 'EVENTS') {
-      matchesViewMode = m.genre.toLowerCase().includes('standup') || m.genre.toLowerCase().includes('comedy');
+      const isStree = m.title.toLowerCase().includes('stree');
+      matchesViewMode =
+        !isStree &&
+        (m.genre.toLowerCase().includes('standup') ||
+          m.genre.toLowerCase().includes('event') ||
+          (m.genre.toLowerCase().includes('comedy') && !m.genre.toLowerCase().includes('horror')));
     } else if (viewMode === 'SPORTS') {
       matchesViewMode = m.genre.toLowerCase().includes('sports') || m.genre.toLowerCase().includes('cricket');
     }
@@ -81,15 +114,58 @@ export const CustomerDashboard = () => {
     return Object.values(map);
   }, [shows, selectedCity]);
 
+  const handleTabChange = (mode) => {
+    setViewMode(mode);
+    setSearchParams({ category: mode });
+    setActiveGenre('ALL');
+  };
+
+  const [selectedDate, setSelectedDate] = useState('TODAY');
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
       {/* ========================================================
-         1. HERO HEADER SECTION (Dark Emerald Slate Aesthetic)
+         0. LIVE VERIFIED BOX-OFFICE TICKER BAR (Privileged Roles ONLY)
          ======================================================== */}
-      <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white p-8 md:p-12 shadow-2xl border border-slate-800">
-        {/* Background Mesh Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-slate-950 to-emerald-950/80 z-0" />
-        <div className="absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px] opacity-15 z-0" />
+      {isPrivilegedUser && (
+        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 px-4 text-xs text-slate-300 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none shadow-lg animate-fade-in">
+          <div className="flex items-center gap-2 font-bold shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-emerald-400 uppercase tracking-wider text-[11px] font-black">Internal Live Stream ({user.role})</span>
+          </div>
+          <div className="flex items-center gap-6 font-medium shrink-0 text-[11px]">
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <strong className="text-white font-extrabold">4,820</strong> QR Passes Verified Today
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <strong className="text-white font-extrabold">₹18.4L</strong> Gross Aggregate Box-Office
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+              <strong className="text-white font-extrabold">{showsByTheatre.length}</strong> Operating Venues
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+         1. HERO HEADER SECTION (Illuminated Grand Theatre Stage Background)
+         ======================================================== */}
+      <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white p-8 md:p-12 shadow-2xl border border-slate-700/80 group">
+        {/* Illuminated Grand Theatre Stage Background Picture */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src="/banners/theatre_hero.jpg"
+            alt="Illuminated Grand Theatre Stage"
+            className="w-full h-full object-cover object-center transform scale-105 filter brightness-75 contrast-120 group-hover:scale-110 transition-transform duration-1000 opacity-90"
+          />
+          {/* Vibrant Gradient Overlays for High Contrast Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/55 to-slate-950/30 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/40 z-10" />
+          <div className="absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px] opacity-15 z-10" />
+        </div>
 
         <div className="relative z-10 max-w-3xl space-y-5">
           {/* Badge */}
@@ -101,22 +177,21 @@ export const CustomerDashboard = () => {
           {/* Heading */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
             Every Seat. Every Ticket. <br />
-            <span className="text-emerald-400">Every Verified Collection.</span>
+            <span className="text-emerald-400">Every Verified Stage & Collection.</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed font-medium">
-            Real-time seat mapping with atomic double-booking protection, instant QR code passes, and auditable box-office reporting.
+            Real-time seat mapping with atomic double-booking protection, instant QR code passes, and auditable stage & show box-office reporting.
           </p>
 
-          {/* Search & City Selection Controls */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-3">
-            {/* Search Input */}
-            <div className="relative flex-1">
+          {/* Search Controls (Clean & Full-Width inside First Card) */}
+          <div className="pt-3 max-w-2xl">
+            <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
               <input
                 type="text"
-                placeholder="Search movie title, language, genre..."
+                placeholder="Search plays, theatre, events, language, genre..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-2xl text-sm font-semibold text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 shadow-inner transition-all"
@@ -124,53 +199,43 @@ export const CustomerDashboard = () => {
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  className="absolute right-3.5 top-3.5 text-xs text-slate-400 hover:text-white bg-slate-800 px-2 py-0.5 rounded-md font-bold"
+                  className="absolute right-3.5 top-3.5 text-xs text-slate-400 hover:text-white bg-slate-800 px-2 py-0.5 rounded-md font-bold cursor-pointer"
                 >
                   Clear
                 </button>
               )}
             </div>
-
-            {/* City Selection Button */}
-            <button
-              onClick={openCityModal}
-              className="relative w-full sm:w-64 flex items-center justify-between pl-11 pr-4 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-2xl text-sm shadow-lg shadow-emerald-600/25 transition-all cursor-pointer group shrink-0"
-            >
-              <MapPin className="w-4 h-4 text-slate-950 absolute left-4 top-4 group-hover:scale-110 transition-transform" />
-              <span className="truncate">{selectedCity ? `City: ${selectedCity}` : 'Select City'}</span>
-              <ChevronDown className="w-4 h-4 text-slate-950" />
-            </button>
           </div>
         </div>
       </div>
 
       {/* ========================================================
-         2. FEATURED PROMOTIONAL BANNER SLIDER (Under Hero Section)
+         2. FEATURED PROMOTIONAL BANNER SLIDER
          ======================================================== */}
       <FeaturedPromoCarousel shows={shows} />
 
       {/* ========================================================
-         3. CATEGORY VIEW TABS & FILTER STRIP
+         3. CATEGORY VIEW TABS, GENRE STRIP & CITY SELECTOR
          ======================================================== */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        {/* Main View Mode Toggle Buttons */}
-        <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 shadow-inner overflow-x-auto max-w-full scrollbar-none">
+      <div className="space-y-4 border-b border-slate-200 pb-5">
+        {/* Row 1: Main View Mode Toggle Buttons */}
+        <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-full border border-slate-200/80 shadow-inner overflow-x-auto max-w-full scrollbar-none">
           <button
-            onClick={() => { setViewMode('MOVIES'); setActiveGenre('ALL'); }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
-              viewMode === 'MOVIES'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+            onClick={() => handleTabChange('PLAYS')}
+            className={`px-5 py-2.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+              viewMode === 'PLAYS'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-600/20'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
             }`}
           >
-            <Film className="w-4 h-4" /> Movies
+            <Sparkles className="w-4 h-4 text-emerald-200" /> Plays & Theatre
           </button>
 
           <button
-            onClick={() => { setViewMode('EVENTS'); setActiveGenre('ALL'); }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+            onClick={() => handleTabChange('EVENTS')}
+            className={`px-5 py-2.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               viewMode === 'EVENTS'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-2 ring-amber-600/20'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
             }`}
           >
@@ -178,10 +243,10 @@ export const CustomerDashboard = () => {
           </button>
 
           <button
-            onClick={() => { setViewMode('SPORTS'); setActiveGenre('ALL'); }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+            onClick={() => handleTabChange('SPORTS')}
+            className={`px-5 py-2.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               viewMode === 'SPORTS'
-                ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
+                ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/30 ring-2 ring-cyan-600/20'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
             }`}
           >
@@ -189,10 +254,10 @@ export const CustomerDashboard = () => {
           </button>
 
           <button
-            onClick={() => setViewMode('THEATRES')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+            onClick={() => handleTabChange('THEATRES')}
+            className={`px-5 py-2.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               viewMode === 'THEATRES'
-                ? 'bg-emerald-700 text-white shadow-md shadow-emerald-700/20'
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/30 ring-2 ring-slate-900/20'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
             }`}
           >
@@ -200,10 +265,10 @@ export const CustomerDashboard = () => {
           </button>
         </div>
 
-        {/* Genre Tags Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto max-w-full scrollbar-none">
+        {/* Row 2: Genre Tags Filter Line */}
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full scrollbar-none pt-1">
           <span className="text-xs text-slate-500 font-bold mr-1 shrink-0">Genre:</span>
-          {['ALL', 'Action', 'Sci-Fi', 'Comedy', 'Thriller', 'Sports / Cricket', 'Standup Comedy'].map((g) => (
+          {['ALL', 'Plays & Theatre', 'Drama', 'Musical', 'Comedy', 'Action', 'Sci-Fi', 'Sports / Cricket', 'Standup Comedy'].map((g) => (
             <button
               key={g}
               onClick={() => setActiveGenre(g)}
@@ -217,6 +282,80 @@ export const CustomerDashboard = () => {
             </button>
           ))}
         </div>
+
+        {/* Row 3: Select Cities Option (Placed Perfectly Below the Genre Line) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center gap-2 overflow-x-auto max-w-full scrollbar-none py-0.5">
+            <div className="flex items-center gap-1.5 text-xs text-slate-700 font-extrabold mr-1 shrink-0">
+              <MapPin className="w-4 h-4 text-emerald-600" />
+              <span>Select City:</span>
+            </div>
+
+            {/* Popular City Quick Select Pills */}
+            {['Mumbai', 'Delhi-NCR', 'Bengaluru', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad', 'Jaipur'].map((cityName) => {
+              const isSelected = selectedCity === cityName;
+              return (
+                <button
+                  key={cityName}
+                  onClick={() => selectCity(cityName)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30 font-extrabold'
+                      : 'bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200/80'
+                  }`}
+                >
+                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                  {cityName}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* More Cities Modal Trigger Button */}
+          <button
+            onClick={openCityModal}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-900 hover:bg-emerald-600 text-white text-xs font-extrabold transition-all cursor-pointer shadow-xs shrink-0 group self-start sm:self-auto"
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 group-hover:text-white" />
+            <span>More Cities ({selectedCity || 'All'})</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
+          </button>
+        </div>
+
+        {/* Row 4: Interactive Showtime Date Filter Line */}
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full scrollbar-none pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-extrabold mr-1 shrink-0">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <span>Show Date:</span>
+          </div>
+
+          {[
+            { id: 'TODAY', label: 'Today', dateStr: '15 Sep' },
+            { id: 'TOMORROW', label: 'Tomorrow', dateStr: '16 Sep' },
+            { id: 'THU', label: 'Thu', dateStr: '17 Sep' },
+            { id: 'FRI', label: 'Fri', dateStr: '18 Sep' },
+            { id: 'SAT', label: 'Sat', dateStr: '19 Sep' },
+            { id: 'SUN', label: 'Sun', dateStr: '20 Sep' },
+          ].map((item) => {
+            const isSelected = selectedDate === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSelectedDate(item.id)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/30 font-extrabold'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>{item.label}</span>
+                <span className={`text-[10px] ${isSelected ? 'text-emerald-300 font-bold' : 'text-slate-400'}`}>
+                  ({item.dateStr})
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ========================================================
@@ -225,7 +364,7 @@ export const CustomerDashboard = () => {
       {loading ? (
         <div className="text-center py-20 text-slate-500 font-bold space-y-3">
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm">Fetching verified cinemas & showtimes in {selectedCity}...</p>
+          <p className="text-sm">Fetching verified showtimes & theatre halls in {selectedCity}...</p>
         </div>
       ) : viewMode === 'THEATRES' ? (
         /* ----------------------------------------------------
@@ -234,10 +373,10 @@ export const CustomerDashboard = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" /> Active Cinema Halls & Multiplexes in {selectedCity}
+              <Building2 className="w-5 h-5 text-emerald-600" /> Active Theatre Halls & Multiplexes in {selectedCity}
             </h2>
             <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-3.5 py-1 rounded-full border border-emerald-200">
-              {showsByTheatre.length} Cinema Halls Operating
+              {showsByTheatre.length} Theatre Halls Operating
             </span>
           </div>
 
@@ -267,11 +406,11 @@ export const CustomerDashboard = () => {
                     </div>
 
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-extrabold border border-emerald-200 self-start sm:self-auto">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> 4K Dolby Atmos & Laser Sound
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> 4K Dolby Atmos & Live Stage Sound
                     </div>
                   </div>
 
-                  {/* Movies & Showtimes under this Theatre */}
+                  {/* Movies, Plays & Showtimes under this Theatre */}
                   <div className="space-y-4">
                     {Object.values(
                       theatre.shows.reduce((acc, show) => {
@@ -290,42 +429,40 @@ export const CustomerDashboard = () => {
                         key={movie?._id || Math.random()}
                         className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
                       >
-                        {/* Movie Poster & Details */}
+                        {/* Poster & Details */}
                         <div className="flex items-center gap-3.5 min-w-[240px]">
                           <img
                             src={movie?.posterUrl || '/posters/kalki.jpg'}
-                            alt={movie?.title || 'Movie'}
+                            alt={movie?.title || 'Show'}
                             className="w-14 h-20 object-cover rounded-xl shadow-sm border border-slate-200"
                           />
                           <div>
                             <span className="text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200">
-                              {movie?.genre || 'Action'}
+                              {movie?.genre || 'Drama'}
                             </span>
                             <h4 className="text-sm font-extrabold text-slate-900 mt-1 line-clamp-1">
-                              {movie?.title || 'Blockbuster Movie'}
+                              {movie?.title || 'Featured Show'}
                             </h4>
                             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                               {movie?.language} • {movie?.durationMin} mins
                             </p>
 
-                            {/* View YouTube Trailer link for movies */}
-                            {!movie?.genre?.toLowerCase().includes('sports') && !movie?.genre?.toLowerCase().includes('standup') && (
-                              <a
-                                href={`https://www.youtube.com/results?search_query=${encodeURIComponent((movie?.title || 'Movie') + ' Official Trailer')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 hover:text-rose-700 mt-1"
-                              >
-                                <Play className="w-3 h-3 fill-rose-600" /> Watch YouTube Trailer
-                              </a>
-                            )}
+                            {/* View Teaser link */}
+                            <a
+                              href={`https://www.youtube.com/results?search_query=${encodeURIComponent((movie?.title || 'Show') + ' Official Teaser')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 hover:text-rose-700 mt-1"
+                            >
+                              <Play className="w-3 h-3 fill-rose-600" /> Watch Teaser / Trailer
+                            </a>
                           </div>
                         </div>
 
-                        {/* Standard 6 Daily Showtimes Slots */}
+                        {/* Showtimes Slots */}
                         <div className="flex-1">
                           <span className="block text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wider">
-                            Daily 6 Showtimes Slots:
+                            Daily Showtimes Slots:
                           </span>
                           <div className="flex flex-wrap items-center gap-2.5">
                             {movieShows.map((s) => {
@@ -373,16 +510,16 @@ export const CustomerDashboard = () => {
         </div>
       ) : (
         /* ----------------------------------------------------
-           B. CATALOG GRID (Movies, Comedy & Sports)
+           B. CATALOG GRID (Plays & Theatre, Comedy, Sports)
            ---------------------------------------------------- */
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-              {viewMode === 'MOVIES' && <Film className="w-5 h-5 text-emerald-600" />}
+              {viewMode === 'PLAYS' && <Sparkles className="w-5 h-5 text-emerald-600" />}
               {viewMode === 'EVENTS' && <Mic className="w-5 h-5 text-amber-500" />}
               {viewMode === 'SPORTS' && <Trophy className="w-5 h-5 text-cyan-500" />}
               <span>
-                {viewMode === 'MOVIES' && `Blockbuster Movies in ${selectedCity}`}
+                {viewMode === 'PLAYS' && `Verified Plays & Theatre Performances in ${selectedCity}`}
                 {viewMode === 'EVENTS' && `Live Standup Comedy & Events in ${selectedCity}`}
                 {viewMode === 'SPORTS' && `IPL Cricket & Sports Tickets in ${selectedCity}`}
               </span>
@@ -394,15 +531,14 @@ export const CustomerDashboard = () => {
 
           {filteredMovies.length === 0 ? (
             <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 shadow-sm space-y-3">
-              <Film className="w-12 h-12 text-slate-400 mx-auto" />
-              <h3 className="text-lg font-bold text-slate-900">No Listings Found</h3>
+              <Sparkles className="w-12 h-12 text-slate-400 mx-auto" />
+              <h3 className="text-lg font-bold text-slate-900">No Stage Listings Found</h3>
               <p className="text-xs text-slate-500">Try changing your genre filter or selecting another city.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredMovies.map((movie) => {
                 const movieShows = getShowsForMovie(movie._id);
-                const isMovieType = !movie.genre.toLowerCase().includes('sports') && !movie.genre.toLowerCase().includes('standup');
 
                 return (
                   <div
@@ -421,7 +557,7 @@ export const CustomerDashboard = () => {
                       </div>
 
                       <div className="absolute top-3 left-3 px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase shadow-md flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-white" /> 9.4 Rating
+                        <Star className="w-3 h-3 fill-white" /> 9.5 Rating
                       </div>
                     </div>
 
@@ -443,18 +579,16 @@ export const CustomerDashboard = () => {
                         </p>
                       </div>
 
-                      {/* YouTube Trailer Button for Movies ONLY */}
-                      {isMovieType && (
-                        <a
-                          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' Official Trailer')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-700 text-xs font-bold transition-all border border-slate-200 group/trailer"
-                        >
-                          <Play className="w-3.5 h-3.5 text-rose-600 group-hover/trailer:text-white fill-current" />
-                          <span>View YouTube Trailer</span>
-                        </a>
-                      )}
+                      {/* Teaser / Trailer Link */}
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' Official Teaser')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-700 text-xs font-bold transition-all border border-slate-200 group/trailer"
+                      >
+                        <Play className="w-3.5 h-3.5 text-rose-600 group-hover/trailer:text-white fill-current" />
+                        <span>Watch Teaser / Trailer</span>
+                      </a>
 
                       {/* Showtimes & Booking Buttons */}
                       <div className="border-t border-slate-100 pt-3.5 space-y-2.5">

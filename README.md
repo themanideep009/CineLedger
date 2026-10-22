@@ -12,7 +12,7 @@
 
 **CineLedger** is a full-stack, enterprise-grade movie ticketing and auditable box-office verification platform. It solves critical entertainment industry challenges—such as ticket scalping, unaccounted box-office revenue leaks, and double-booking discrepancies—via atomic seat locking, SHA-256 HMAC cryptographic QR verification, and automated revenue ledger aggregation.
 
-[Key Features](#-key-features) • [Architecture](#-system-architecture) • [Role Matrix](#-role-based-access-control-rbac) • [Demo Login Presets](#-demo-login-presets) • [Quick Start](#-quick-start) • [API Reference](#-api-reference)
+[Key Features](#-key-features) • [Architecture](#-system-architecture) • [Role Matrix](#-role-based-access-control-rbac) • [Interview Guide](INTERVIEW_GUIDE.md) • [Demo Login Presets](#-demo-login-presets) • [Quick Start](#-quick-start) • [API Reference](#-api-reference)
 
 </div>
 
@@ -113,7 +113,7 @@ Use these credentials to quickly test all user roles and workflows:
 | 🎬 **Producer (Dharma)** | `producer.karan@cineledger.com` | `producer123` | Box-Office Collections & Revenue Settlements |
 | 🎬 **Producer (YRF)** | `producer.aditya@cineledger.com` | `producer123` | Box-Office Collections & Revenue Settlements |
 | 🍿 **Theatre Admin (PVR)** | `admin.pvr@cineledger.com` | `theatre123` | POS Counter & Gate Scanner Station |
-| 🎟️ **Customer** | `customer@gmail.com` | `customer123` | Movie Browsing & Seat Booking |
+| 🎟️ **Customer (Manideep Sai)** | `customer@gmail.com` | `customer123` | Movie Browsing & Seat Booking |
 
 ---
 
